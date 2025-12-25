@@ -1,823 +1,653 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>阿瓦隆 Avalon — 瀏覽器桌遊（單機/傳遞模式）</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>阿瓦隆 Online - 多人連線版</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
-        :root {
-            --bg: #0b1020;
-            --panel: #121a2e;
-            --muted: #7d8ab0;
-            --txt: #eaf1ff;
-            --good: #5fe1a1;
-            --evil: #ff6b6b;
-            --accent: #6ea8fe;
-            --gold: #ffd166;
-            --good-light: #b9f6ca;
-            --evil-light: #ffb3b3;
-            --neutral: #9fb5ff55;
-        }
-
-        * {
-            box-sizing: border-box
-        }
-
-        html,
         body {
-            height: 100%
+            background-color: #0b1020;
+            color: #f1f5f9;
         }
 
-        body {
-            margin: 0;
-            background: radial-gradient(1000px 600px at 20% -10%, #1a2550 0%, #0b1020 60%) no-repeat var(--bg);
-            color: var(--txt);
-            font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans TC, "PingFang TC", Helvetica, Arial
-        }
-
-        h1,
-        h2,
-        h3 {
-            margin: 0 0 .5rem
-        }
-
-        a {
-            color: var(--gold)
-        }
-
-        .app {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 16px 16px 100px
-        }
-
-        .grid {
-            display: grid;
-            gap: 16px
-        }
-
-        .row {
-            display: flex;
-            gap: 12px;
-            align-items: center
-        }
-
-        .col {
-            display: flex;
-            flex-direction: column;
-            gap: 12px
-        }
-
-        .card {
-            background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
-            border: 1px solid rgba(255, 255, 255, .08);
-            border-radius: 16px;
-            padding: 16px;
-            backdrop-filter: blur(6px)
-        }
-
-        .pill {
-            display: inline-flex;
-            gap: 8px;
-            align-items: center;
-            border: 1px solid rgba(255, 255, 255, .12);
-            padding: 6px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-            color: var(--muted)
-        }
-
-        .btn {
-            cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, .12);
-            border-radius: 12px;
-            background: #18243f;
-            color: var(--txt);
-            padding: 10px 14px;
-            font-weight: 600;
-            letter-spacing: .2px
-        }
-
-        .btn.secondary {
-            background: #131a2b
-        }
-
-        .btn[disabled] {
-            opacity: .6;
-            cursor: not-allowed
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap
-        }
-
-        .players {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px
-        }
-
-        .player {
-            position: relative;
-            background: #121a2e;
-            border: 1px solid rgba(255, 255, 255, .1);
-            border-radius: 14px;
-            padding: 10px
-        }
-
-        .player .top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center
-        }
-
-        .player .name {
-            font-weight: 700
-        }
-
-        .player .tag {
-            font-size: 12px;
-            color: var(--muted)
-        }
-
-        .player .role {
-            margin-top: 8px;
-            font-size: 13px;
-            color: #bcd0ff
-        }
-
-        .chip {
-            font-size: 12px;
-            padding: 3px 8px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, .15);
-        }
-
-        .chip.good {
-            color: var(--good);
-            border-color: rgba(95, 225, 161, .35)
-        }
-
-        .chip.evil {
-            color: var(--evil);
-            border-color: rgba(255, 107, 107, .35)
-        }
-
-        .is-leader {
-            outline: 2px solid var(--gold)
-        }
-
-        .selectable {
-            cursor: pointer;
-            transition: transform .08s ease
-        }
-
-        .selectable:hover {
-            transform: translateY(-1px)
-        }
-
-        .selected {
-            box-shadow: 0 0 0 2px var(--accent) inset
-        }
-
-        .section-title {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-top: 8px
-        }
-
-        .log {
-            white-space: pre-wrap;
-            max-height: 220px;
-            overflow: auto;
-            background: #0f1528;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, .08);
-            padding: 10px
-        }
-
-        .stack {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px
-        }
-
-        .vote-dot {
-            width: 12px;
-            height: 12px;
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            display: inline-block;
-            margin-right: 6px
+            border-top: 3px solid #fff;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
         }
 
-        .approve {
-            background: var(--good)
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
-        .reject {
-            background: var(--evil)
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
         }
 
-        .divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .1), transparent);
-            margin: 8px 0
-        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
 
-        dialog {
-            border: none;
-            max-width: 520px;
-            width: calc(100% - 32px);
-            background: #0f1528;
-            color: var(--txt);
-            border-radius: 16px;
-            padding: 0
-        }
-
-        dialog::backdrop {
-            background: rgba(3, 6, 16, .6)
-        }
-
-        .dlg-body {
-            padding: 16px
-        }
-
-        .dlg-head {
-            padding: 14px 16px;
-            background: #131c33;
-            border-bottom: 1px solid rgba(255, 255, 255, .08);
-            border-top-left-radius: 16px;
-            border-top-right-radius: 16px
-        }
-
-        .kbd {
-            font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-            background: #0e1324;
-            border: 1px solid rgba(255, 255, 255, .12);
-            border-radius: 6px;
-            padding: 2px 6px;
-            color: #cfe1ff
-        }
-
-        .hint {
-            color: #a9b7de;
-            font-size: 13px
-        }
-
-        /* 任務進度面板 */
-        .mission-board {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap
-        }
-
-        .mission-dot {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: #3a4569;
-            border: 2px solid rgba(255, 255, 255, .2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #dfe7ff;
-            font-size: 13px;
-            font-weight: 700
-        }
-
-        .mission-dot.success {
-            background: var(--good-light);
-            color: #0b3d2e
-        }
-
-        .mission-dot.fail {
-            background: var(--evil-light);
-            color: #5b0000
-        }
-
-        .mission-dot.active {
-            box-shadow: 0 0 0 2px var(--accent) inset;
-            background: var(--neutral)
-        }
-
-        /* 本輪出牌結果（卡片視覺） */
-        .cards-board {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-            min-height: 56px
-        }
-
-        .card-tile {
-            width: 40px;
-            height: 56px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, .18);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            background: #15203f
-        }
-
-        .card-tile.success {
-            background: #163a2b;
-            border-color: rgba(95, 225, 161, .3)
-        }
-
-        .card-tile.success::after {
-            content: 'S';
-            color: var(--good)
-        }
-
-        .card-tile.fail {
-            background: #3a1b1b;
-            border-color: rgba(255, 107, 107, .35)
-        }
-
-        .card-tile.fail::after {
-            content: 'F';
-            color: var(--evil)
-        }
-
-        .cards-hint {
-            color: #a9b7de;
-            font-size: 12px
+            to {
+                opacity: 1;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="app">
-        <header class="row" style="justify-content:space-between;align-items:flex-start">
-            <div>
-                <h1>阿瓦隆 Avalon — 瀏覽器桌遊</h1>
-                <div class="pill">單機傳遞（Hotseat）｜不連網路｜支援 5–10 人、經典與女神</div>
-            </div>
-            <div class="toolbar">
-                <button class="btn" id="btnNew">🎲 分配角色</button>
-                <button class="btn secondary" id="btnRules">❓ 規則/快捷鍵</button>
-            </div>
-        </header>
+    <div id="root"></div>
 
-        <section class="grid" style="grid-template-columns: 320px 1fr; margin-top:12px">
-            <!-- 控制面板 -->
-            <div class="card col">
-                <h3>設定</h3>
-                <label class="row" style="justify-content:space-between">
-                    <span>玩家人數</span>
-                    <select id="playerCount">
-                        <option>5</option>
-                        <option>6</option>
-                        <option>7</option>
-                        <option selected>8</option>
-                        <option>9</option>
-                        <option>10</option>
-                    </select>
-                </label>
-                <label class="row" style="justify-content:space-between"><span>加入派西維爾</span><input type="checkbox"
-                        id="optPercival" checked></label>
-                <label class="row" style="justify-content:space-between"><span>加入莫德雷德</span><input type="checkbox"
-                        id="optMordred" checked></label>
-                <label class="row" style="justify-content:space-between"><span>加入莫甘娜</span><input type="checkbox"
-                        id="optMorgana" checked></label>
-                <label class="row" style="justify-content:space-between"><span>加入刺客</span><input type="checkbox"
-                        id="optAssassin" checked></label>
-                <label class="row" style="justify-content:space-between"><span>加入爪牙</span><input type="checkbox"
-                        id="optMinion"></label>
-                <label class="row" style="justify-content:space-between"><span>加入奧伯倫</span><input type="checkbox"
-                        id="optOberon"></label>
-                <label class="row" style="justify-content:space-between"><span>湖中女神</span><input type="checkbox"
-                        id="optLady"></label>
-                <div class="divider"></div>
-                <div class="hint">建議流程：<span class="kbd">配發</span> → <span class="kbd">夜晚</span> → 開始任務與投票。</div>
-                <div class="divider"></div>
-                <div class="col">
-                    <h3>本輪狀態</h3>
-                    <div>領袖：<span id="leaderName" class="chip">—</span></div>
-                    <div>目前任務：<span id="missionIdx" class="chip">—</span>（需 <span id="needPlayers">—</span> 人）</div>
-                    <div>提案否決次數：<span id="fails" class="chip">0</span> / 5</div>
-                    <div>戰績：<span id="score" class="chip">—</span></div>
-                    <!-- 依你的要求：移除「開始/投票/執行任務」三個按鈕 -->
-                    <div class="divider"></div>
-                    <div class="col">
-                        <h3>任務進度</h3>
-                        <div id="missionBoard" class="mission-board"></div>
+    <script type="text/babel" data-type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import {
+            getFirestore, collection, doc, setDoc, getDoc, updateDoc,
+            onSnapshot, runTransaction, arrayUnion
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const { useState, useEffect, useMemo } = React;
+
+        // --- USER CONFIGURATION ---
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyA4sDlsmd6HjQT4dpEAEBuVYKtKnmxmAZI",
+            authDomain: "avalon-b2ea5.firebaseapp.com",
+            projectId: "avalon-b2ea5",
+            storageBucket: "avalon-b2ea5.firebasestorage.app",
+            messagingSenderId: "170894045462",
+            appId: "1:170894045462:web:cfa2b06e23f3e28bb1e037",
+            measurementId: "G-6ZXMRVDW8Y"
+        };
+
+        // --- Icons ---
+        const createLucideIcon = (name) => ({ size = 24, className = "", ...props }) => {
+            const iconDef = lucide.icons[name];
+            if (!iconDef) return null;
+            return React.createElement("svg", {
+                xmlns: "http://www.w3.org/2000/svg",
+                width: size, height: size, viewBox: "0 0 24 24",
+                fill: "none", stroke: "currentColor", strokeWidth: 2,
+                strokeLinecap: "round", strokeLinejoin: "round", className: className,
+                ...props
+            }, ...iconDef.map(([tag, attrs], i) => React.createElement(tag, { ...attrs, key: i })));
+        };
+
+        const Users = createLucideIcon("Users");
+        const Crown = createLucideIcon("Crown");
+        const Shield = createLucideIcon("Shield");
+        const Check = createLucideIcon("Check");
+        const X = createLucideIcon("X");
+        const Play = createLucideIcon("Play");
+        const Copy = createLucideIcon("Copy");
+        const ArrowUp = createLucideIcon("ArrowUp");
+        const ArrowDown = createLucideIcon("ArrowDown");
+        const Eye = createLucideIcon("Eye");
+        const EyeOff = createLucideIcon("EyeOff");
+        const RefreshCw = createLucideIcon("RefreshCw");
+        const Sparkles = createLucideIcon("Sparkles");
+
+        // --- Components ---
+        const Card = ({ children, className = "" }) => (
+            <div className={`bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-xl p-4 shadow-xl ${className}`}>
+                {children}
+            </div>
+        );
+
+        const Button = ({ onClick, children, variant = 'primary', disabled = false, className = '' }) => {
+            const base = "px-4 py-2 rounded-lg font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2";
+            const styles = {
+                primary: "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/50",
+                secondary: "bg-slate-700 hover:bg-slate-600 text-slate-200",
+                danger: "bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/50",
+                success: "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/50",
+                warning: "bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-900/50",
+            };
+            return (
+                <button onClick={onClick} disabled={disabled} className={`${base} ${styles[variant]} ${className}`}>
+                    {disabled && variant !== 'secondary' ? <div className="loader"></div> : children}
+                </button>
+            );
+        };
+
+        const Badge = ({ children, type = 'neutral' }) => {
+            const styles = {
+                good: "bg-emerald-900/50 text-emerald-400 border-emerald-700",
+                evil: "bg-red-900/50 text-red-400 border-red-700",
+                neutral: "bg-slate-700 text-slate-300 border-slate-600",
+            };
+            return <span className={`text-xs px-2 py-0.5 rounded-full border ${styles[type]}`}>{children}</span>;
+        };
+
+        // --- Game Logic ---
+        const ROLES_CONFIG = {
+            Merlin: { name: '梅林', side: 'good', label: '正義' },
+            Percival: { name: '派西維爾', side: 'good', label: '正義' },
+            Servant: { name: '忠臣', side: 'good', label: '正義' },
+            Mordred: { name: '莫德雷德', side: 'evil', label: '邪惡' },
+            Morgana: { name: '莫甘娜', side: 'evil', label: '邪惡' },
+            Assassin: { name: '刺客', side: 'evil', label: '邪惡' },
+            Oberon: { name: '奧伯倫', side: 'evil', label: '邪惡' },
+            Minion: { name: '爪牙', side: 'evil', label: '邪惡' },
+        };
+
+        const MISSION_MATRIX = {
+            5: [2, 3, 2, 3, 3],
+            6: [2, 3, 4, 3, 4],
+            7: [2, 3, 3, 4, 4],
+            8: [3, 4, 4, 5, 5],
+            9: [3, 4, 4, 5, 5],
+            10: [3, 4, 4, 5, 5]
+        };
+
+        const App = () => {
+            const [appInstance, setAppInstance] = useState(null);
+            const [user, setUser] = useState(null);
+            const [roomCode, setRoomCode] = useState('');
+            const [playerName, setPlayerName] = useState('');
+            const [roomData, setRoomData] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+            const [copySuccess, setCopySuccess] = useState(false);
+
+            useEffect(() => {
+                try {
+                    const app = initializeApp(FIREBASE_CONFIG);
+                    const auth = getAuth(app);
+                    signInAnonymously(auth).catch(err => setError(err.message));
+                    onAuthStateChanged(auth, u => setUser(u));
+                    setAppInstance(app);
+                } catch (e) { setError("Firebase Init Error"); }
+            }, []);
+
+            useEffect(() => {
+                if (!user || !roomCode || !appInstance) return;
+                const db = getFirestore(appInstance);
+                const unsub = onSnapshot(doc(db, 'avalon_rooms', roomCode), (snap) => {
+                    if (snap.exists()) { setRoomData(snap.data()); setLoading(false); }
+                    else { setRoomData(null); setLoading(false); }
+                }, err => setError(err.message));
+                return () => unsub();
+            }, [user, roomCode, appInstance]);
+
+            const getDb = () => getFirestore(appInstance);
+
+            const copyToClipboard = (text) => {
+                navigator.clipboard.writeText(text).then(() => {
+                    setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000);
+                });
+            };
+
+            const createRoom = async () => {
+                if (!playerName.trim()) return setError('請輸入暱稱');
+                setLoading(true);
+                const db = getDb();
+                const code = Math.floor(1000 + Math.random() * 9000).toString();
+
+                const initialData = {
+                    code, hostId: user.uid, status: 'lobby', createdAt: Date.now(),
+                    players: [{ uid: user.uid, name: playerName.trim(), role: null, side: null }],
+                    settings: { Percival: true, Morgana: true, Mordred: true, Oberon: false, Assassin: true, Lady: false },
+                    gameState: {
+                        round: 0, phase: 'night', leaderIdx: 0, team: [], votes: {},
+                        missionVotes: {}, missionHistory: [], voteTrack: 0,
+                        ladyIdx: -1,
+                        logs: [`👑 房間已建立`]
+                    }
+                };
+                try {
+                    await setDoc(doc(db, 'avalon_rooms', code), initialData);
+                    setRoomCode(code);
+                } catch (err) { setLoading(false); setError(err.message); }
+            };
+
+            const joinRoom = async (codeToJoin) => {
+                if (!playerName.trim()) return setError('請輸入暱稱');
+                setLoading(true);
+                const db = getDb();
+                const ref = doc(db, 'avalon_rooms', codeToJoin);
+                try {
+                    await runTransaction(db, async (txn) => {
+                        const docSnap = await txn.get(ref);
+                        if (!docSnap.exists()) throw "房間不存在";
+                        const data = docSnap.data();
+                        if (data.status !== 'lobby') throw "遊戲已開始";
+                        if (data.players.some(p => p.uid === user.uid)) return;
+                        txn.update(ref, { players: [...data.players, { uid: user.uid, name: playerName.trim() }] });
+                    });
+                    setRoomCode(codeToJoin);
+                } catch (err) { setLoading(false); setError(typeof err === 'string' ? err : err.message); }
+            };
+
+            const updateGame = async (updates) => {
+                if (!appInstance || !roomCode) return;
+                await updateDoc(doc(getDb(), 'avalon_rooms', roomCode), updates);
+            };
+
+            const generateStartData = (currentPlayers, currentSettings) => {
+                const p = [...currentPlayers];
+                const s = currentSettings;
+                let goods = ['Merlin']; if (s.Percival) goods.push('Percival');
+                let evils = []; if (s.Mordred) evils.push('Mordred'); if (s.Morgana) evils.push('Morgana'); if (s.Oberon) evils.push('Oberon'); if (s.Assassin) evils.push('Assassin');
+
+                const numEvil = { 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4 }[p.length] || 2;
+                while (evils.length < numEvil) evils.push('Minion');
+                while (evils.length > numEvil) evils.pop();
+                while (goods.length + evils.length < p.length) goods.push('Servant');
+
+                const deck = [...goods, ...evils].sort(() => Math.random() - 0.5);
+                const newPlayers = p.map((pl, i) => ({ ...pl, role: deck[i], side: ROLES_CONFIG[deck[i]].side }));
+                const initialLadyIdx = s.Lady ? p.length - 1 : -1;
+
+                return {
+                    players: newPlayers,
+                    status: 'playing',
+                    gameState: {
+                        round: 0, phase: 'night', leaderIdx: 0, team: [], votes: {},
+                        missionVotes: {}, missionHistory: [], voteTrack: 0,
+                        ladyIdx: initialLadyIdx,
+                        logs: [`🎲 遊戲開始！${p.length}人局 (${numEvil}壞人)${s.Lady ? '，🧚 湖中女神已啟用' : ''}`]
+                    }
+                };
+            };
+
+            const startGame = async () => {
+                if (roomData.players.length < 5) return alert('至少5人');
+                const newData = generateStartData(roomData.players, roomData.settings);
+                await updateGame(newData);
+            };
+
+            const restartGame = async () => {
+                if (!confirm("確定要重新開始嗎？將重新分配身分。")) return;
+                const simplePlayers = roomData.players.map(p => ({ uid: p.uid, name: p.name }));
+                const newData = generateStartData(simplePlayers, roomData.settings);
+                await updateGame(newData);
+            };
+
+            if (!user) return <div className="min-h-screen flex items-center justify-center text-slate-400">連線中...</div>;
+
+            return (
+                <div className="max-w-3xl mx-auto p-4 min-h-screen flex flex-col">
+                    <header className="flex justify-between items-center mb-6">
+                        <div className="flex items-center gap-3">
+                            <Shield className="w-8 h-8 text-yellow-500" />
+                            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-600">
+                                阿瓦隆 Online
+                            </h1>
+                        </div>
+                        {roomCode && (
+                            <div className="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full text-sm border border-slate-700">
+                                <span className="font-mono font-bold text-yellow-400 text-lg">{roomCode}</span>
+                                <button onClick={() => copyToClipboard(roomCode)} className="p-1 hover:text-white">
+                                    {copySuccess ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                                </button>
+                            </div>
+                        )}
+                    </header>
+
+                    {error && <div className="bg-red-900/50 text-red-200 p-3 rounded mb-4">{error} <button onClick={() => setError('')} className="float-right"><X /></button></div>}
+
+                    {!roomData ? (
+                        <LobbyForm playerName={playerName} setPlayerName={setPlayerName} createRoom={createRoom} joinRoom={joinRoom} loading={loading} />
+                    ) : roomData.status === 'lobby' ? (
+                        <LobbyRoom user={user} roomData={roomData} isHost={roomData.hostId === user.uid} updateGame={updateGame} startGame={startGame} />
+                    ) : (
+                        <GameBoard
+                            user={user} roomData={roomData} isHost={roomData.hostId === user.uid}
+                            updateGame={updateGame} appInstance={appInstance} roomCode={roomCode}
+                            restartGame={restartGame}
+                        />
+                    )}
+                </div>
+            );
+        };
+
+        const LobbyForm = ({ playerName, setPlayerName, createRoom, joinRoom, loading }) => {
+            const [code, setCode] = useState('');
+            return (
+                <Card className="max-w-md mx-auto mt-10">
+                    <div className="space-y-6">
+                        <div>
+                            <label className="text-sm text-slate-400">您的暱稱</label>
+                            <input value={playerName} onChange={e => setPlayerName(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded p-3 mt-1 text-white" />
+                        </div>
+                        <Button onClick={createRoom} disabled={loading} className="w-full py-3">建立新房間</Button>
+                        <div className="flex gap-2">
+                            <input value={code} onChange={e => setCode(e.target.value)} placeholder="輸入房號" className="flex-1 bg-slate-900 border border-slate-700 rounded p-3 text-center text-white" />
+                            <Button onClick={() => joinRoom(code)} disabled={loading} variant="secondary">加入</Button>
+                        </div>
+                    </div>
+                </Card>
+            );
+        };
+
+        const LobbyRoom = ({ user, roomData, isHost, updateGame, startGame }) => {
+            const movePlayer = (idx, dir) => {
+                const newP = [...roomData.players];
+                [newP[idx], newP[idx + dir]] = [newP[idx + dir], newP[idx]];
+                updateGame({ players: newP });
+            };
+            const toggleSetting = (k) => updateGame({ [`settings.${k}`]: !roomData.settings[k] });
+
+            return (
+                <div className="grid md:grid-cols-2 gap-6">
+                    <Card>
+                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Users size={20} /> 玩家 ({roomData.players.length})</h3>
+                        <div className="space-y-2">
+                            {roomData.players.map((p, i) => (
+                                <div key={p.uid} className="flex justify-between items-center bg-slate-900/50 p-3 rounded border border-slate-700">
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs">{i + 1}</span>
+                                        <span className={p.uid === user.uid ? "text-yellow-400 font-bold" : ""}>{p.name}</span>
+                                        {p.uid === roomData.hostId && <Crown size={14} className="text-yellow-500" />}
+                                    </div>
+                                    {isHost && (
+                                        <div className="flex gap-1">
+                                            <button onClick={() => movePlayer(i, -1)} disabled={i === 0} className="p-1 hover:bg-slate-700 rounded disabled:opacity-30"><ArrowUp size={16} /></button>
+                                            <button onClick={() => movePlayer(i, 1)} disabled={i === roomData.players.length - 1} className="p-1 hover:bg-slate-700 rounded disabled:opacity-30"><ArrowDown size={16} /></button>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+                    <div className="space-y-6">
+                        <Card>
+                            <h3 className="text-xl font-bold mb-4">遊戲設定</h3>
+                            <div className="grid grid-cols-2 gap-2">
+                                {Object.keys(roomData.settings).map(k => (
+                                    <label key={k} className="flex items-center justify-between bg-slate-900/30 p-2 rounded cursor-pointer hover:bg-slate-800">
+                                        <span className="text-sm">{k === 'Lady' ? '🧚 湖中女神' : ROLES_CONFIG[k].name}</span>
+                                        <input type="checkbox" checked={roomData.settings[k]} onChange={() => toggleSetting(k)} disabled={!isHost} className="accent-blue-500 w-5 h-5" />
+                                    </label>
+                                ))}
+                            </div>
+                            <p className="text-xs text-slate-500 mt-2">*湖中女神建議 7 人以上開啟，於任務 2,3,4 後發動。</p>
+                        </Card>
+                        {isHost ? <Button onClick={startGame} className="w-full py-4 text-lg" disabled={roomData.players.length < 5}><Play size={20} /> 開始遊戲</Button> : <div className="text-center text-slate-500 animate-pulse">等待房主開始...</div>}
                     </div>
                 </div>
-            </div>
+            );
+        };
 
-            <!-- 主面板 -->
-            <div class="card col">
-                <div class="section-title">
-                    <h3>玩家區</h3><span class="hint">點選以加入/移除任務隊伍</span>
-                </div>
-                <div class="players" id="players"></div>
+        const GameBoard = ({ user, roomData, isHost, updateGame, appInstance, roomCode, restartGame }) => {
+            const { gameState, players, settings } = roomData;
+            const me = players.find(p => p.uid === user.uid);
+            const isLeader = players[gameState.leaderIdx].uid === user.uid;
+            const missionSize = MISSION_MATRIX[players.length][gameState.round];
+            const [showIdentity, setShowIdentity] = useState(false);
 
-                <div class="section-title">
-                    <h3>提案/任務控制</h3>
-                </div>
-                <div class="row" style="gap:8px;flex-wrap:wrap">
-                    <button class="btn" id="btnClearSel">清空選擇</button>
-                    <button class="btn" id="btnConfirmTeam">✅ 確認本次任務成員</button>
-                    <span class="pill">目前選擇：<strong id="selectedCount">0</strong> 人</span>
-                    <span id="twoFailWarn"
-                        style="display:none;font-size: 15px; margin-left:10px; color:rgb(255, 107, 107); font-weight:bold;"></span>
-                </div>
+            const myRoleInfo = useMemo(() => {
+                const r = ROLES_CONFIG[me.role];
+                let info = `陣營：${r.label}。`;
+                let seen = [];
+                if (me.role === 'Merlin') seen = players.filter(p => ROLES_CONFIG[p.role].side === 'evil' && p.role !== 'Mordred').map(p => p.name);
+                if (me.role === 'Percival') seen = players.filter(p => ['Merlin', 'Morgana'].includes(p.role)).map(p => p.name);
+                if (r.side === 'evil' && me.role !== 'Oberon') seen = players.filter(p => ROLES_CONFIG[p.role].side === 'evil' && p.role !== 'Oberon' && p.uid !== me.uid).map(p => p.name);
+                if (seen.length) info += ` 視野：${seen.join(', ')}`;
+                return { ...r, extra: info };
+            }, [me, players]);
 
-                <div class="divider"></div>
-                <!-- 這裡新增：本輪出牌結果面板（在紀錄上方） -->
-                <div class="section-title">
-                    <h3>本輪出牌結果</h3><span class="hint">失敗卡優先顯示</span>
-                </div>
-                <div id="cardsBoard" class="cards-board"><span class="cards-hint">（等待本輪結算）</span></div>
-
-                <div class="divider"></div>
-                <div class="section-title">
-                    <h3>紀錄</h3><span class="hint">雙擊紀錄可複製</span>
-                </div>
-                <div id="log" class="log"></div>
-            </div>
-        </section>
-    </div>
-
-    <!-- 通用對話框 -->
-    <dialog id="dlg">
-        <div class="dlg-head"><strong id="dlgTitle">訊息</strong></div>
-        <div class="dlg-body" id="dlgBody"></div>
-        <div class="row" style="padding:0 16px 16px">
-            <button class="btn" id="dlgClose">關閉</button>
-        </div>
-    </dialog>
-
-    <script>
-        (() => {
-            const $ = (q, root = document) => root.querySelector(q);
-            const logEl = $('#log');
-            const dlg = $('#dlg'), dlgTitle = $('#dlgTitle'), dlgBody = $('#dlgBody');
-            $('#dlgClose').onclick = () => dlg.close();
-
-            const missionMatrix = { 5: [2, 3, 2, 3, 3], 6: [2, 3, 4, 3, 4], 7: [2, 3, 3, 4, 4], 8: [3, 4, 4, 5, 5], 9: [3, 4, 4, 5, 5], 10: [3, 4, 4, 5, 5] };
-            const needsTwoFails = (pc, mi) => pc >= 7 && mi === 3;
-
-            const ALL_ROLES = {
-                Merlin: { name: '梅林', side: 'good' }, Percival: { name: '派西維爾', side: 'good' }, Servant: { name: '忠臣', side: 'good' },
-                Mordred: { name: '莫德雷德', side: 'evil' }, Morgana: { name: '莫甘娜', side: 'evil' }, Assassin: { name: '刺客', side: 'evil' }, Oberon: { name: '奧伯倫', side: 'evil' }, Minion: { name: '壞人', side: 'evil' }
+            const toggleTeam = (uid) => {
+                if (!isLeader || gameState.phase !== 'team_selection') return;
+                let t = [...gameState.team];
+                t.includes(uid) ? t = t.filter(id => id !== uid) : (t.length < missionSize && t.push(uid));
+                updateGame({ 'gameState.team': t });
             };
 
-            let S = {
-                playerCount: 8, players: [], options: { Percival: true, Mordred: true, Morgana: true, Assassin: true, Oberon: false, Minion: false, Lady: false },
-                leaderIdx: 0, missionIndex: 0, team: new Set(), voteHistory: [], missionHistory: [], failProposals: 0,
-                lady: { enabled: false, holder: null, lastTarget: null, prevHolder: null },
-                lastMissionCards: [] // e.g., ['F','F','S','S']，顯示順序已將失敗放前面
-            };
-
-            function seedPlayers(n) {
-                const names = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-                S.players = Array.from({ length: n }, (_, i) => ({ id: i, name: names[i] || ('P' + (i + 1)), role: null, side: null, isLeader: false, seen: {} }));
-            }
-            function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0;[a[i], a[j]] = [a[j], a[i]] } return a }
-
-            function deal() {
-                const n = S.playerCount; seedPlayers(n);
-                const goodsBase = ['Merlin']; if (S.options.Percival) goodsBase.push('Percival');
-                const evilBase = [];
-                if (S.options.Morgana) evilBase.push('Morgana');
-                if (S.options.Assassin) evilBase.push('Assassin');
-                if (S.options.Mordred) evilBase.push('Mordred');
-                if (S.options.Oberon) evilBase.push('Oberon');
-                if (S.options.Minion) evilBase.push('Minion');
-                const evilCount = Math.floor((n + 2) / 3); while (evilBase.length < evilCount) evilBase.push('Minion');
-                const goodCount = n - evilCount; const goods = goodsBase.slice(); while (goods.length < goodCount) goods.push('Servant');
-                const deck = goods.concat(evilBase).map(r => ALL_ROLES[r]); shuffle(deck);
-                S.players.forEach((p, i) => { const r = deck[i]; p.role = r.name; p.side = r.side; });
-
-                const merlin = S.players.find(p => p.role === '梅林');
-                if (merlin) { merlin.seen.evil = S.players.filter(p => p.side === 'evil' && p.role !== '奧伯倫' && p.role !== '莫德雷德').map(p => p.name); }
-                const percival = S.players.find(p => p.role === '派西維爾');
-                if (percival) { const candidates = S.players.filter(p => p.role === '梅林' || p.role === '莫甘娜').map(p => p.name); percival.seen.wizards = shuffle(candidates.slice()); }
-                S.players.forEach(p => { if (p.side === 'evil' && p.role !== '奧伯倫') { p.seen.evils = S.players.filter(q => q.side === 'evil' && q.role !== '奧伯倫' && q.id !== p.id).map(x => x.name); } });
-
-                S.leaderIdx = 0; S.missionIndex = 0; S.failProposals = 0; S.team.clear(); S.voteHistory = []; S.missionHistory = [];
-                S.lady.enabled = !!S.options.Lady;
-                S.lady.holder = S.lady.enabled ? (S.playerCount - 1) : null;
-                S.lady.lastTarget = null;
-                S.lady.prevHolder = null;
-                render(); addLog(`🎲 已配發角色。正義方 ${goodCount} 人，邪惡方 ${evilCount} 人。請依序「查看私人身份」。`);
-            }
-
-            function addLog(text) { const ts = new Date().toLocaleTimeString('zh-TW', { hour12: false }); logEl.textContent += `[${ts}] ${text}\n`; logEl.scrollTop = logEl.scrollHeight; }
-
-            function getLastApprovalFor(i) { if (!S.voteHistory.length) return null; const last = S.voteHistory[S.voteHistory.length - 1]; return (typeof last.approvals[i] === 'boolean') ? last.approvals[i] : null; }
-
-            function renderMissionBoard() {
-                const board = $('#missionBoard'); if (!board) return; board.innerHTML = '';
-                for (let i = 0; i < 5; i++) {
-                    const dot = document.createElement('div');
-                    dot.className = 'mission-dot';
-                    const needCount = missionMatrix[S.playerCount][i];
-                    dot.textContent = needCount;  // 直接顯示需要人數
-                    if (S.missionHistory[i]) {
-                        dot.classList.add(S.missionHistory[i].success ? 'success' : 'fail');
-                    }
-                    else if (i === S.missionIndex) {
-                        dot.classList.add('active');
-                    }
-                    board.appendChild(dot);
-
-
-                }
-            }
-
-            function renderMissionCards() {
-                const board = $('#cardsBoard'); if (!board) return; board.innerHTML = '';
-                if (!S.lastMissionCards.length) { board.innerHTML = '<span class="cards-hint">（等待本輪結算）</span>'; return; }
-                S.lastMissionCards.forEach(c => { const el = document.createElement('div'); el.className = 'card-tile ' + (c === 'F' ? 'fail' : 'success'); board.appendChild(el); });
-            }
-
-            function render() {
-                const cont = $('#players'); if (cont) {
-                    cont.innerHTML = '';
-                    S.players.forEach((p, i) => {
-                        const lastVote = getLastApprovalFor(i);
-                        const voteBadge = '';
-                        const div = document.createElement('div');
-                        div.className = 'player selectable' + (i === S.leaderIdx ? ' is-leader' : '') + (S.team.has(i) ? ' selected' : '');
-                        div.dataset.id = i;
-                        div.innerHTML = `
-              <div class="top">
-                <div class="name">${p.name}</div>
-                <div class="row">${voteBadge}</div>
-              </div>
-              <div class="role">（點我：加入/移除任務；<a href="#" data-role="peek">私訊</a>）</div>
-              <div class="tag">${p.role ? '身分已發' : '未配發'}</div>`;
-                        cont.appendChild(div);
-                    });
-                }
-                $('#leaderName').textContent = S.players[S.leaderIdx]?.name ?? '—';
-                $('#missionIdx').textContent = (S.missionIndex + 1);
-                $('#needPlayers').textContent = missionMatrix[S.playerCount][S.missionIndex];
-                $('#fails').textContent = S.failProposals;
-                // === 第4輪 + 7人以上 提醒需要兩張失敗才算失敗 ===
-                const warn = document.querySelector('#twoFailWarn');
-                if (needsTwoFails(S.playerCount, S.missionIndex)) {
-                    warn.style.display = 'inline-block';
-                    warn.textContent = '此任務需要 2 張「失敗」卡才會失敗';
-                } else {
-                    warn.style.display = 'none';
-                }
-
-                const goodWins = S.missionHistory.filter(m => m.success).length; const evilWins = S.missionHistory.filter(m => !m.success).length;
-                $('#score').textContent = `好 ${goodWins}：${evilWins} 壞`;
-                $('#selectedCount').textContent = S.team.size;
-                renderMissionBoard();
-                renderMissionCards();
-            }
-
-            function openDialog(title, bodyEl) { dlgTitle.textContent = title; dlgBody.innerHTML = ''; dlgBody.appendChild(bodyEl); dlg.showModal(); }
-
-            function showPrivate(id) {
-                const p = S.players[id];
-                const box = document.createElement('div'); box.className = 'col';
-                const lines = [
-                    `<div class="row" style="justify-content:space-between"><div><strong>${p.name}</strong> 的私人身份</div><span class="chip ${p.side === 'good' ? 'good' : 'evil'}">${p.side === 'good' ? '正義' : '邪惡'}</span></div>`,
-                    `<div class="divider"></div>`,
-                    `<div>你的角色：<strong>${p.role}</strong></div>`
-                ];
-                if (p.role === '梅林') { lines.push(`<div class="hint">你看到的壞人（不含莫德雷德、奧伯倫）：${p.seen.evil && p.seen.evil.length ? p.seen.evil.join('、') : '（無）'}</div>`); }
-                if (p.role === '派西維爾') {
-                    const sorted = p.seen.wizards ? p.seen.wizards.sort((a, b) => a.localeCompare(b)) : [];
-                    lines.push(`<div class="hint">你看到兩道光芒（梅林/莫甘娜）(沒有順序)：${sorted.length ? sorted.join('、') : '（無）'}</div>`);
-                } if (p.side === 'evil' && p.role !== '奧伯倫') { lines.push(`<div class="hint">你知道的壞人夥伴：${p.seen.evils && p.seen.evils.length ? p.seen.evils.join('、') : '（無）'}</div>`); }
-                box.innerHTML = lines.join('');
-                openDialog('私人身份', box);
-            }
-
-            function startOrNext() { if (S.players.length === 0 || !S.players[0].role) { deal(); return; } S.team.clear(); render(); addLog(`👑 領袖是 ${S.players[S.leaderIdx].name}。請選出 ${missionMatrix[S.playerCount][S.missionIndex]} 人出任務。`); }
-
-            function confirmTeam() {
-                const need = missionMatrix[S.playerCount][S.missionIndex];
-                if (S.team.size !== need) { alert(`需要選 ${need} 人，目前 ${S.team.size} 人。`); return; }
-                const box = document.createElement('div'); box.className = 'col';
-                box.innerHTML = `<div>確認任務隊伍：<strong>${[...S.team].map(i => S.players[i].name).join('、')}</strong></div>`;
-                const votes = [];
-                S.players.forEach((p, i) => {
-                    const row = document.createElement('div'); row.className = 'row'; row.style.justifyContent = 'space-between';
-                    row.innerHTML = `<div>${p.name}</div>`;
-                    const btns = document.createElement('div'); btns.className = 'row'; btns.style.gap = '6px';
-                    const b1 = document.createElement('button'); b1.className = 'btn'; b1.textContent = '贊成';
-                    const b2 = document.createElement('button'); b2.className = 'btn secondary'; b2.textContent = '反對';
-                    b1.onclick = () => { votes[i] = true; mark(); };
-                    b2.onclick = () => { votes[i] = false; mark(); };
-                    function mark() { b1.style.outline = votes[i] === true ? '2px solid var(--good)' : ''; b2.style.outline = votes[i] === false ? '2px solid var(--evil)' : '' }
-                    btns.append(b1, b2); row.appendChild(btns); box.appendChild(row);
-                });
-                const submit = document.createElement('button'); submit.className = 'btn'; submit.textContent = '送出投票結果';
-                submit.onclick = () => {
-                    if (votes.some(v => v === undefined)) { if (!confirm('仍有人未投票，確定送出？')) return; }
-                    const approvals = votes.map(v => !!v);
-                    const yes = approvals.filter(Boolean).length; const no = approvals.length - yes;
-                    const passed = yes > no; // 平手視為否決
-                    S.voteHistory.push({ leader: S.leaderIdx, team: [...S.team], approvals, passed });
-                    if (passed) { addLog(`🗳️ 投票通過（${yes} 贊成 / ${no} 反對）`); dlg.close(); executeMission(); }
-                    else { addLog(`🗳️ 投票否決（${yes} 贊成 / ${no} 反對）`); S.failProposals++; dlg.close(); if (S.failProposals >= 5) { endGame('evil', '連續 5 次否決，邪惡方勝利'); return; } S.leaderIdx = (S.leaderIdx + 1) % S.players.length; S.team.clear(); render(); }
-                    render();
-                };
-                box.appendChild(document.createElement('div')).className = 'divider';
-                box.appendChild(submit);
-                openDialog('投票 — 贊成/反對', box);
-            }
-
-            function executeMission() {
-                const team = [...S.team];
-                const twoFailNeeded = needsTwoFails(S.playerCount, S.missionIndex);
-                const choices = {}; let idx = 0;
-                const step = () => {
-                    if (idx >= team.length) {
-                        const arr = team.map(i => choices[i] || 'S');
-                        const fails = arr.filter(x => 'F' === x).length;
-                        const success = twoFailNeeded ? (fails < 2) : (fails === 0);
-                        S.missionHistory.push({ team: team.slice(), fails, success });
-
-                        // 構造本輪出牌顯示：失敗在前，成功在後
-                        const cards = new Array(fails).fill('F').concat(new Array(team.length - fails).fill('S'));
-                        S.lastMissionCards = cards;
-                        render(); // 先刷新面板，再關閉框
-
-                        // addLog(`🛡️ 任務結果：${success ? '✅ 成功' : '❌ 失敗'}（失敗卡 ${fails}）`);
-                        dlg.close();
-
-                        // 勝負判斷
-                        if (success && S.missionHistory.filter(m => m.success).length >= 3) { const assassin = S.players.find(p => p.role === '刺客'); if (assassin) { openAssassination(); } else { endGame('good', '三次任務成功'); } return; }
-                        if (!success && S.missionHistory.filter(m => !m.success).length >= 3) { endGame('evil', '三次任務失敗'); return; }
-
-                        const mIdx = S.missionIndex; if (S.lady.enabled && (mIdx === 1 || mIdx === 2 || mIdx === 3)) { openLady(); } else { nextLeaderAndMission(); }
-                        return;
-                    }
-                    const pid = team[idx]; const p = S.players[pid];
-                    const box = document.createElement('div'); box.className = 'col';
-                    box.innerHTML = `
-            <div>請 <strong>${p.name}</strong> 獨自查看並選擇你的任務卡。</div>
-            <div class="hint">（把裝置交給 ${p.name}，其他人請轉頭或閉眼。選擇後系統會自動切換到下一位。）</div>
-            ${twoFailNeeded ? '<span class="pill">此任務需要兩張失敗卡才算失敗</span>' : ''}
-          `;
-                    const btnRow = document.createElement('div'); btnRow.className = 'row'; btnRow.style.gap = '8px';
-                    const bSucc = document.createElement('button'); bSucc.className = 'btn'; bSucc.textContent = '✅ 成功';
-                    const bFail = document.createElement('button'); bFail.className = 'btn secondary'; bFail.textContent = '❌ 失敗';
-                    bSucc.onclick = () => { choices[pid] = 'S'; idx++; step(); };
-                    bFail.onclick = () => { if (p.side === 'evil') { choices[pid] = 'F'; idx++; step(); } else { alert('正義方不能出失敗卡'); } };
-                    btnRow.append(bSucc, bFail); box.appendChild(btnRow);
-                    openDialog(`任務投票（第 ${idx + 1}/${team.length} 位）`, box);
-                };
-                step();
-            }
-
-            function nextLeaderAndMission() { S.leaderIdx = (S.leaderIdx + 1) % S.players.length; S.missionIndex++; S.team.clear(); S.failProposals = 0; render(); addLog(`▶️ 進入任務 ${S.missionIndex + 1} 。👑 領袖是 ${S.players[S.leaderIdx].name}。請選出 ${missionMatrix[S.playerCount][S.missionIndex]} 人出任務。`); }
-            function openLady() {
-                if (!S.lady.enabled) return nextLeaderAndMission();
-                const holder = S.players[S.lady.holder];
-                const box = document.createElement('div'); box.className = 'col';
-                box.innerHTML = `<div>湖中女神由 <strong>${holder.name}</strong> 持有。選擇要查驗的玩家（僅顯示陣營）。</div>`;
-                const list = document.createElement('div'); list.className = 'stack';
-                S.players.forEach((p, i) => {
-                    if (i === S.lady.holder) return;
-                    const btn = document.createElement('button');
-                    btn.className = 'btn secondary';
-                    // 不可查驗上一輪的持有者
-                    if (S.lady.prevHolder !== null && i === S.lady.prevHolder) {
-                        btn.disabled = true;
-                        btn.textContent = `${p.name}（不可查驗：上一輪持有者）`;
+            const castVote = async (val) => {
+                const db = getFirestore(appInstance);
+                const ref = doc(db, 'avalon_rooms', roomCode);
+                await runTransaction(db, async (txn) => {
+                    const doc = await txn.get(ref);
+                    const d = doc.data();
+                    const newVotes = { ...d.gameState.votes, [user.uid]: val };
+                    if (Object.keys(newVotes).length === d.players.length) {
+                        const pass = Object.values(newVotes).filter(v => v).length > d.players.length / 2;
+                        const logs = d.gameState.logs;
+                        logs.push(pass ? `✅ 提案通過` : `❌ 提案否決`);
+                        let up = { 'gameState.votes': {}, 'gameState.logs': logs };
+                        if (pass) {
+                            up['gameState.phase'] = 'mission';
+                            up['gameState.voteTrack'] = 0;
+                        } else {
+                            up['gameState.phase'] = 'team_selection';
+                            up['gameState.team'] = [];
+                            up['gameState.voteTrack'] = d.gameState.voteTrack + 1;
+                            up['gameState.leaderIdx'] = (d.gameState.leaderIdx + 1) % d.players.length;
+                            if (up['gameState.voteTrack'] >= 5) { up.status = 'finished'; logs.push('💀 連續5次否決，邪惡勝'); }
+                        }
+                        txn.update(ref, up);
                     } else {
-                        btn.textContent = p.name;
-                        btn.onclick = () => {
-                            const res = p.side === 'good' ? '正義' : '邪惡';
-                            alert(`${p.name} 的陣營是：${res}`);
-                            S.lady.lastTarget = i;
-                            // 記錄上一任持有者，再把令交給被查者
-                            S.lady.prevHolder = S.lady.holder;
-                            S.lady.holder = i;
-                            dlg.close();
-                            nextLeaderAndMission();
-                        };
+                        txn.update(ref, { 'gameState.votes': newVotes });
                     }
-                    list.appendChild(btn);
                 });
-                box.appendChild(list);
-                openDialog('湖中女神', box);
-            }
-            function openAssassination() { const box = document.createElement('div'); box.className = 'col'; box.innerHTML = '<div>邪惡方獲得刺殺機會。請刺客指定他認為是 <strong>梅林</strong> 的玩家。</div>'; const list = document.createElement('div'); list.className = 'stack'; S.players.forEach((p, i) => { const btn = document.createElement('button'); btn.className = 'btn secondary'; btn.textContent = p.name; btn.onclick = () => { const isMerlin = p.role === '梅林'; dlg.close(); if (isMerlin) { endGame('evil', `刺客刺中梅林（${p.name}）`); } else { endGame('good', `刺客刺錯（${p.name}）`); } }; list.appendChild(btn); }); box.appendChild(list); openDialog('刺殺階段', box); }
-
-            // 結束時不顯示身份，只顯示勝負與戰績
-            function endGame(winner, reason) {
-                render();
-                const box = document.createElement('div'); box.className = 'col';
-                const goodWins = S.missionHistory.filter(m => m.success).length; const evilWins = S.missionHistory.filter(m => !m.success).length;
-                box.innerHTML = `<div class="row" style="gap:8px;align-items:center"><h3>${winner === 'good' ? '🏆 正義方勝利' : '💀 邪惡方勝利'}</h3><span class="pill">${reason}</span></div>`;
-                ///   <div>最終戰績：好 ${goodWins}：${evilWins} 壞</div>`;
-                openDialog('遊戲結束', box);
-                addLog(`🏁 遊戲結束：${winner === 'good' ? '正義方勝利' : '邪惡方勝利'}（${reason}）`);
-
-                box.innerHTML += `<div><strong>身份揭曉</strong></div>`;
-                const list = document.createElement('div'); list.className = 'players';
-                S.players.forEach(p => { const dv = document.createElement('div'); dv.className = 'player'; dv.innerHTML = `<div class="top"><div class="name">${p.name}</div><span class="chip ${p.side === 'good' ? 'good' : 'evil'}">${p.side === 'good' ? '正義' : '邪惡'}</span></div><div class="role">${p.role}</div>`; list.appendChild(dv); }); box.appendChild(list);
-            }
-
-            // UI 綁定
-            $('#playerCount').onchange = e => { S.playerCount = +e.target.value; render(); }
-            $('#optPercival').onchange = e => S.options.Percival = e.target.checked;
-            $('#optMordred').onchange = e => S.options.Mordred = e.target.checked;
-            $('#optMorgana').onchange = e => S.options.Morgana = e.target.checked;
-            $('#optAssassin').onchange = e => S.options.Assassin = e.target.checked;
-            $('#optMinion').onchange = e => S.options.Minion = e.target.checked;
-            $('#optOberon').onchange = e => S.options.Oberon = e.target.checked;
-            $('#optLady').onchange = e => S.options.Lady = e.target.checked;
-
-            $('#btnNew').onclick = deal;
-            // 左側三鍵已拿掉，但快捷鍵仍可用
-            window.addEventListener('keydown', (e) => {
-                if (e.key === 'n' || e.key === 'N') { e.preventDefault(); startOrNext(); }
-                if (e.key === 'v' || e.key === 'V') { e.preventDefault(); confirmTeam(); }
-                if (e.key === 'e' || e.key === 'E') { e.preventDefault(); executeMission(); }
-            });
-
-            $('#btnClearSel').onclick = () => { S.team.clear(); render(); };
-            $('#btnConfirmTeam').onclick = confirmTeam;
-
-            $('#players').addEventListener('click', (e) => {
-                const a = e.target.closest('a[data-role="peek"]');
-                if (a) { e.preventDefault(); const card = e.target.closest('.player'); showPrivate(+card.dataset.id); return; }
-                const card = e.target.closest('.player'); if (!card) return; const id = +card.dataset.id;
-                if (S.team.has(id)) S.team.delete(id); else S.team.add(id); render();
-            });
-
-            $('#btnRules').onclick = () => {
-                const box = document.createElement('div'); box.className = 'col';
-                box.innerHTML = `
-      <div><strong>遊戲流程</strong></div>
-      <ul>
-        <div class="step">
-          <strong>1. 設定：</strong>選擇遊玩人數與角色，點擊「分配角色」配發。
-        </div>
-        <div class="step">
-          <strong>2. 查看身份：</strong>依序點擊玩家卡片上的「私訊」按鈕查看自己的角色。
-        </div>
-        <div class="step">
-          <strong>3–5. 重複任務輪次：</strong>
-          <ul style="margin: 6px 0">
-            <li>領袖選擇任務隊伍（點擊玩家卡片加入/移除）</li>
-            <li>確認隊伍並投票（全體贊成/反對）</li>
-            <li>隊伍成員依序選擇「成功/失敗」卡</li>
-            <div class="hint">！！！按一次就好！！！</div>
-            <li>直到某方獲勝（3 次成功 / 3 次失敗 / 5 次否決）</li>
-          </ul>
-        </div>
-      </ul>
-      <div class="divider"></div>
-
-      <div><strong>角色功能簡述</strong></div>
-      <ul>
-        <div style="font-weight: bold; color: #28a745; margin-bottom: 10px;">好人陣營：</div>
-        <li><strong>忠臣</strong> — 無特殊能力。</li>
-        <li><strong>梅林</strong> — 知道所有壞人（看不到莫德雷德與奧伯倫）。</li>
-        <li><strong>派西維爾</strong> — 知道梅林和莫甘娜是誰。</li>
-        <div style="font-weight: bold; color: #dc3545; margin-top: 20px; margin-bottom: 10px;">邪惡陣營：</div>
-        <li><strong>莫德雷德</strong> — 梅林無法識別他。</li>
-        <li><strong>莫甘娜</strong> — 會被誤認為梅林。</li>
-        <li><strong>刺客</strong> — 遊戲結束後可嘗試刺殺一位玩家，若刺中梅林則邪惡勝利。</li>
-        <li><strong>爪牙</strong> — 無特殊能力。</li>
-        <li><strong>奧伯倫</strong> — 其他壞人不知道他的身份，他也不知道其他壞人是誰。</li>
-      </ul>
-
-      <div class="divider"></div>
-      <div><strong>快速規則</strong></div>
-      <ul>
-        <li>每輪由 <b>領袖</b> 提案任務隊伍，所有人投票（平手視為否決）。連續 5 次否決 → 邪惡方勝。</li>
-        <li>任務隊伍成員秘密選擇「成功/失敗」。邪惡才能出失敗；第 4 任務在 7+ 人局需 <em>兩張失敗</em> 才算失敗。</li>
-        <li>三次任務成功 → 正義方勝；三次失敗 → 邪惡方勝（若有刺客則進入刺殺階段）。</li>
-        <li>湖中女神（若啟用）在任務 2/3/4 後發動，查驗陣營並把令交給被查者。</li>
-      </ul>
-      <div class="divider"></div>
-      <div><strong>小技巧</strong></div>
-      <ul>
-        <li>沿用剛成功的核心隊伍通常更穩。</li>
-        <li>觀察投票行為一致性；壞人常成群投票。</li>
-        <li>梅林發言要「準但不太準」；派西維爾負責吸刀。</li>
-      </ul>
-      <div class="divider"></div>
-      <div>快捷鍵：<span class="kbd">N</span> 配發、<span class="kbd">V</span> 投票、<span class="kbd">E</span> 執行任務</div>
-    `;
-                openDialog('規則/提示', box);
             };
 
-            // Init
-            S.playerCount = +$('#playerCount').value; seedPlayers(S.playerCount); render(); addLog('歡迎來到阿瓦隆！請先「配發角色」，再依序查看私人身份。');
-        })();
+            const castMission = async (success) => {
+                const db = getFirestore(appInstance);
+                const ref = doc(db, 'avalon_rooms', roomCode);
+                await runTransaction(db, async (txn) => {
+                    const doc = await txn.get(ref);
+                    const d = doc.data();
+                    const newMV = { ...d.gameState.missionVotes, [user.uid]: success ? 'success' : 'fail' };
+                    if (Object.keys(newMV).length === d.gameState.team.length) {
+                        const moves = Object.values(newMV);
+                        const fails = moves.filter(m => m === 'fail').length;
+                        const needsTwoFails = (d.players.length >= 7 && d.gameState.round === 3);
+                        const isSuccess = fails < (needsTwoFails ? 2 : 1);
+                        const newHist = [...d.gameState.missionHistory, { success: isSuccess, failCount: fails }];
+                        const logs = d.gameState.logs;
+                        logs.push(`🛡️ 任務${d.gameState.round + 1} ${isSuccess ? '成功' : '失敗'} (黑卡:${fails})`);
+
+                        let up = {
+                            'gameState.missionVotes': {}, 'gameState.missionHistory': newHist, 'gameState.logs': logs,
+                            'gameState.team': []
+                        };
+
+                        const wins = newHist.filter(h => h.success).length;
+                        const loss = newHist.filter(h => !h.success).length;
+
+                        if (loss >= 3) {
+                            up.status = 'finished'; logs.push('💀 任務失敗3次，邪惡勝');
+                        } else if (wins >= 3) {
+                            if (d.settings.Assassin) { up['gameState.phase'] = 'assassination'; logs.push('🗡️ 刺客刺殺階段'); }
+                            else { up.status = 'finished'; logs.push('🏆 正義勝'); }
+                        } else {
+                            const nextRound = d.gameState.round + 1;
+                            up['gameState.round'] = nextRound;
+                            up['gameState.leaderIdx'] = (d.gameState.leaderIdx + 1) % d.players.length;
+                            const justFinishedRound = d.gameState.round;
+                            if (d.settings.Lady && d.gameState.ladyIdx !== -1 && (justFinishedRound >= 1 && justFinishedRound <= 3)) {
+                                up['gameState.phase'] = 'lady_of_the_lake';
+                                logs.push('🧚 進入湖中女神階段');
+                            } else {
+                                up['gameState.phase'] = 'team_selection';
+                            }
+                        }
+                        txn.update(ref, up);
+                    } else {
+                        txn.update(ref, { 'gameState.missionVotes': newMV });
+                    }
+                });
+            };
+
+            const performLadyAction = async (targetUid) => {
+                const targetIdx = players.findIndex(p => p.uid === targetUid);
+                const targetP = players[targetIdx];
+                const r = ROLES_CONFIG[targetP.role];
+                const isGood = r.side === 'good';
+                alert(`🧚 女神查驗結果：\n\n玩家 [${targetP.name}] 是 [${isGood ? '正義' : '邪惡'}] 方`);
+                updateGame({
+                    'gameState.phase': 'team_selection',
+                    'gameState.ladyIdx': targetIdx,
+                    'gameState.logs': arrayUnion(`🧚 ${players[gameState.ladyIdx].name} 查驗了 ${targetP.name}，女神標記已轉移`)
+                });
+            };
+
+            const assassinate = async (uid) => {
+                const target = players.find(p => p.uid === uid);
+                let msg = target.role === 'Merlin' ? '💀 刺殺梅林成功，邪惡逆轉勝！' : `🛡️ 刺殺失敗 (${target.name}不是梅林)，正義勝！`;
+                updateGame({ status: 'finished', 'gameState.logs': arrayUnion(msg), 'gameState.phase': 'end' });
+            };
+
+            const isMyTurnLady = (gameState.phase === 'lady_of_the_lake' && players[gameState.ladyIdx]?.uid === user.uid);
+
+            return (
+                <div className="grid lg:grid-cols-12 gap-6 pb-20">
+                    <div className="lg:col-span-8 space-y-6">
+                        <div className="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
+                            <div className="flex gap-2">
+                                {MISSION_MATRIX[players.length].map((c, i) => {
+                                    const h = gameState.missionHistory[i];
+                                    let col = "bg-slate-700 text-slate-400";
+                                    if (h) col = h.success ? "bg-blue-600 text-white" : "bg-red-600 text-white";
+                                    if (i === gameState.round) col = "bg-yellow-600/50 text-yellow-100 ring-2 ring-yellow-500";
+                                    return <div key={i} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${col}`}>{c}</div>
+                                })}
+                            </div>
+                            <div className={`px-3 py-1 rounded bg-slate-900 border border-slate-700 text-xs text-center ${gameState.voteTrack >= 4 ? 'text-red-500' : 'text-white'}`}>
+                                否決<br /><span className="text-lg font-bold">{gameState.voteTrack}/5</span>
+                            </div>
+                        </div>
+
+                        <Card className="min-h-[150px] flex flex-col justify-center items-center text-center p-6 bg-gradient-to-b from-slate-800 to-slate-900 border-yellow-500/30 relative overflow-hidden">
+                            <h2 className="text-xl font-bold mb-4 text-yellow-100 z-10">
+                                {gameState.phase === 'night' && '請確認身分'}
+                                {gameState.phase === 'team_selection' && `領袖 ${players[gameState.leaderIdx].name} 選擇隊伍 (${gameState.team.length}/${missionSize})`}
+                                {gameState.phase === 'voting' && '投票中...'}
+                                {gameState.phase === 'mission' && '任務執行中...'}
+                                {gameState.phase === 'assassination' && '刺客刺殺中...'}
+                                {gameState.phase === 'lady_of_the_lake' && `🧚 湖中女神：${players[gameState.ladyIdx].name} 請選擇查驗對象`}
+                                {roomData.status === 'finished' && (
+                                    <span className={gameState.logs[gameState.logs.length - 1].includes('正義') ? "text-emerald-400" : "text-red-400"}>
+                                        {gameState.logs[gameState.logs.length - 1]}
+                                    </span>
+                                )}
+                            </h2>
+                            <div className="flex gap-4 flex-wrap justify-center z-10">
+                                {gameState.phase === 'night' && isLeader && <Button onClick={() => updateGame({ 'gameState.phase': 'team_selection' })}>結束夜晚</Button>}
+                                {gameState.phase === 'team_selection' && isLeader && <Button onClick={() => updateGame({ 'gameState.phase': 'voting', 'gameState.logs': arrayUnion(`🗳️ 隊伍確認，請投票`) })} disabled={gameState.team.length !== missionSize}>確認隊伍</Button>}
+                                {gameState.phase === 'voting' && gameState.votes[user.uid] === undefined && (
+                                    <>
+                                        <Button onClick={() => castVote(true)} className="bg-white text-black hover:bg-slate-200">⚪ 贊成</Button>
+                                        <Button onClick={() => castVote(false)} className="bg-black text-white border hover:bg-slate-900">⚫ 反對</Button>
+                                    </>
+                                )}
+                                {gameState.phase === 'mission' && gameState.team.includes(user.uid) && !gameState.missionVotes[user.uid] && (
+                                    <>
+                                        <Button onClick={() => castMission(true)} variant="success">任務成功</Button>
+                                        {me.side === 'evil' && <Button onClick={() => castMission(false)} variant="danger">任務失敗</Button>}
+                                    </>
+                                )}
+                                {gameState.phase === 'lady_of_the_lake' && isMyTurnLady && <div className="text-sm text-yellow-300 animate-pulse">請點擊下方玩家頭像進行查驗</div>}
+                                {roomData.status === 'finished' && isHost && <Button onClick={restartGame} variant="warning" className="mt-2"><RefreshCw size={18} /> 重新開始遊戲</Button>}
+                            </div>
+                        </Card>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {players.map((p, i) => {
+                                const isSel = gameState.team.includes(p.uid);
+                                const isLdr = i === gameState.gameState?.leaderIdx;
+                                const isLady = i === gameState.ladyIdx;
+                                const vote = gameState.votes[p.uid];
+
+                                const handleClick = () => {
+                                    if (gameState.phase === 'team_selection') toggleTeam(p.uid);
+                                    if (gameState.phase === 'assassination' && me.role === 'Assassin' && confirm(`刺殺 ${p.name}?`)) assassinate(p.uid);
+                                    if (gameState.phase === 'lady_of_the_lake' && isMyTurnLady) {
+                                        if (p.uid === user.uid) return alert("不能查驗自己");
+                                        if (confirm(`確定要查驗 ${p.name} 的陣營嗎？`)) performLadyAction(p.uid);
+                                    }
+                                };
+
+                                return (
+                                    <div key={p.uid} onClick={handleClick}
+                                        className={`relative p-3 rounded border cursor-pointer transition-all 
+                                            ${isSel ? 'bg-blue-900/40 border-blue-500 shadow-lg shadow-blue-500/20' : 'bg-slate-800 border-slate-700'} 
+                                            ${isLdr ? 'ring-2 ring-yellow-500' : ''}
+                                            ${gameState.phase === 'lady_of_the_lake' && isMyTurnLady && p.uid !== user.uid ? 'hover:bg-purple-900/50 hover:border-purple-400' : ''}
+                                        `}
+                                    >
+                                        <div className="flex justify-between mb-2">
+                                            <span className="font-bold truncate text-sm">{p.name}</span>
+                                            <div className="flex gap-1">
+                                                {isLdr && <Crown size={14} className="text-yellow-500" />}
+                                                {settings.Lady && isLady && <Sparkles size={14} className="text-purple-400" />}
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-1 items-center min-h-[20px]">
+                                            {gameState.phase === 'voting' && (
+                                                vote === undefined ? <div className="w-4 h-4 rounded-full border border-slate-600" /> :
+                                                    vote === true ? <Check size={16} className="text-green-500" /> :
+                                                        <X size={16} className="text-red-500" />
+                                            )}
+                                            {isSel && <Shield size={16} className="text-blue-400" />}
+                                        </div>
+                                        {roomData.status === 'finished' && <div className={`mt-2 text-xs px-1 rounded ${ROLES_CONFIG[p.role].side === 'good' ? 'text-green-300' : 'text-red-300'}`}>{ROLES_CONFIG[p.role].name}</div>}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-4 space-y-6">
+                        <div className="bg-gradient-to-br from-indigo-900 to-slate-900 p-1 rounded-xl shadow-2xl">
+                            <div className="bg-slate-900/90 p-4 rounded-lg relative min-h-[140px] flex flex-col">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-indigo-300 text-xs font-bold uppercase">你的身分</h3>
+                                    <button onClick={() => setShowIdentity(!showIdentity)} className="text-slate-400 hover:text-white">
+                                        {showIdentity ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                                {showIdentity ? (
+                                    <div className="fade-in">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="text-2xl font-black">{myRoleInfo.name}</div>
+                                            <Badge type={myRoleInfo.side}>{myRoleInfo.label}</Badge>
+                                        </div>
+                                        <p className="text-xs text-indigo-200 border-t border-indigo-500/30 pt-2 leading-relaxed">{myRoleInfo.extra}</p>
+                                    </div>
+                                ) : (
+                                    <div onClick={() => setShowIdentity(true)} className="flex-1 flex flex-col items-center justify-center text-slate-500 cursor-pointer hover:text-slate-300 transition-colors">
+                                        <Eye size={32} className="mb-2 opacity-50" />
+                                        <span className="text-sm">點擊顯示身分</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <Card className="max-h-[400px] overflow-y-auto flex flex-col-reverse bg-slate-900/50">
+                            <div className="space-y-1">
+                                {[...gameState.logs].reverse().map((l, i) => <div key={i} className="text-sm text-slate-400 border-b border-slate-800 pb-1">{l}</div>)}
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 
